@@ -11,9 +11,9 @@ import numpy as np
 
 # %% current directory
 # ### Get the current working directory (adjust)
-# cwd = "/home/trurl/Dropbox/programowanie/data_transform_env/"
+# cwd = "/home/trurl/Dropbox/programowanie/python_general/"
 
-cwd = "D:/Dropbox/programowanie/data_transform_env"
+cwd = "D:/Dropbox/programowanie/python_general"
 
 # TODO: for some reason does not work in Linux
 # cwd = os.path.dirname(os.path.abspath("__file__"))
@@ -69,15 +69,23 @@ df.median_income.tail()
 len(df)
 len(df["median_income"])
 
-# retrieve column by index
+### retrieve column by index
 # NOTE: indices x:y goes from x to y-1 !!!
 df.iloc[:, 2:4]
+# but loc is inclusive (!!!)
+df.loc[:, "longitude":"housing_median_age"]
+
+## the same for rows 
+df.iloc[2:4, :] # --> does not include 4
+df.loc[2:4, :] # --> includes 4
 
 # first row
-df.iloc[[0]]
+df.iloc[[0]] # outputs dataframe
+df.iloc[0] # outputs series
 
 # last row
 df.iloc[[-1]]
+df.iloc[-1]
 
 # unique values with counts
 # WARNING: does not count NAs
@@ -95,29 +103,47 @@ sum(df["total_bedrooms"].isna())
 sum(df.median_income.isna())
 df.median_income.isna().sum()
 
-# filling NA values
+
+# %% categorize values
+
+# just give number of bins and function will provide bins with equal number of obs
+df["bins"] = pd.cut(df["median_house_value"], 5)
+# crosstab --> as table in R
+pd.crosstab(df["ocean_proximity"], df["bins"])
+
+# one may also exxplicitly give bins
+min_bin = df["median_house_value"].min()
+max_bin = df["median_house_value"].max()
+bins2 = np.linspace(min_bin, max_bin, 5)
+df["bins2"] = pd.cut(df["median_house_value"], bins2)
+pd.crosstab(df["ocean_proximity"], df["bins2"])
+
+# %%  filling NA values
 # TODO: see .fillna() and .dropna() methods from pandas
 #
 # ...
 #
-# TODO add sorting
-# df.sort_values(by = 'colname', inplace = TRUE)
+# %% sorting
+df.sort_values(by = "median_house_value", inplace = True)
 
-# %% rounding specified columns to specified decimal places
-cols = ['latitude', 'median_income', 'population']
-df[cols]
-# cols = ['median_income']
+# %% apply function dataset 
+cols = ['median_house_value', 'median_income']
 
-# generates a list of a number given in [] of length of cols list
-# assumed that n_round is the same for all cols
-num_of_dec_places = [1] * len(cols)
-print(num_of_dec_places)
+df1 = df[cols].copy()
+df2 = df[cols].copy()
+df3 = df[cols].copy()
 
-rounding_decimals = pd.Series(num_of_dec_places, index=cols)
-rounding_decimals.describe()
-# rounding_decimals.info()
-df_rounded = df.round(rounding_decimals)
-print(df_rounded[cols])
+floorer = lambda x: np.floor(x)
+
+# apply works for rows/columns, for dataframe and series
+df1 = df1.apply(floorer)
+
+# map works element-wise but only for series
+df2 = df2.map(floorer) # <-- will not work because input is a df
+df2['median_income'] = df2['median_income'].map(floorer)
+
+# applymap works element-wise for dataframe only (map is for series)
+df3 = df3.applymap(floorer)
 
 # %% droping columns by name
 cols_1 = ['latitude', 'longitude']
@@ -150,10 +176,22 @@ df1 = df[df['ocean_proximity'] == 'NEAR BAY']
 df2 = df.loc[df["ocean_proximity"] == "NEAR BAY"]
 
 # example 2 with subsetting
-df_ocean_prox_near_bay = \
-    df.loc[df["ocean_proximity"] == "NEAR BAY",
-           ["longitude", "latitude", "population"]]
+cols = ["longitude", "latitude", "population"]
+df_ocean_prox_near_bay = df.loc[df["ocean_proximity"] == "NEAR BAY", cols]
 print(df_ocean_prox_near_bay)
+
+#%% replace values
+df5 = df.copy()
+
+# elegant way
+df5['ocean_proximity'].value_counts()
+df5['ocean_proximity'].replace(('INLAND', 'NEAR BAY'), ('aa', 'bb'), inplace=True)
+df5['ocean_proximity'].value_counts()
+
+# like in R
+df6 = df.copy()
+df6.loc[df6['ocean_proximity'] == 'INLAND', 'ocean_proximity'] = 'aa'
+df6['ocean_proximity'].value_counts()
 
 
 # %% compares
@@ -201,14 +239,33 @@ df_group_many = df.groupby("ocean_proximity").agg(
     sum_population=("population", sum),
     sum_isna_total_bedrooms=("total_bedrooms", lambda x: (x.isna().sum()))
 )
+# by dict
+# silly but just for an example 
+# merge columns longitude and latitude and calculate sum
+df.columns
+group_dict = {'ocean_proximity': 'prox', 
+              'longitude': 'tude', 
+              'latitude': 'tude'}
 
-# TODO add groupby like mutate in dplyr --not summarize
+df_grouped = df.groupby(group_dict, axis=1)
+df_grouped.sum()
+
+### apply function for each group
+# top gives n top obs in a column 
+def top(df, n=5, column='median_income'):
+    return df.sort_values(by=column)[-n:]
+
+top(df)
+# creates hierarchical row index
+df.groupby('ocean_proximity').apply(top, n=3)
+# index in a column group_keys=False
+df.groupby('ocean_proximity', group_keys=False).apply(top, n=3)
+
 # exhaustive description of merges for pandas
 # https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html
-# here workaround
 df_group3 = df.groupby("ocean_proximity").agg(
     mean_housing_median_age=("housing_median_age", "mean"))
-
+# add to have products of groupby in rows in original table; see also transform
 df_with_agg = pd.merge(df, df_group3,
                        on="ocean_proximity",
                        how="left")
@@ -216,6 +273,21 @@ df_with_agg[["ocean_proximity",
              "housing_median_age",
              "mean_housing_median_age"]]
 
+# transform: calculate a function on grouped table but do not change input
+# like mutate/transform in R
+# this is done instead of agg
+df.columns
+df_group5 = df.groupby('ocean_proximity').housing_median_age
+df['mean_housing_median_age'] = df_group5.transform('mean')
+df.columns
+
+# pivot table (mean is a default)
+
+# index is rows, columns is columns
+df.pivot_table(index=['ocean_proximity', 'housing_median_age'], aggfunc="mean")
+df.pivot_table(index=['ocean_proximity'],
+               columns='housing_median_age',
+               aggfunc="mean")
 
 # reshape
 # gdy w reshapie jest -1, to python traktuje to jak nieznany wymiar i
@@ -284,3 +356,20 @@ x = pd.DataFrame(
         "d": [1, np.nan, 4]
     }
 )
+
+# TODO add numpy ndarray
+
+#%% melt and pivot
+
+# melt --> wide to long
+melted = pd.melt(df, id_vars=('longitude', 'latitude'), 
+              value_vars=('housing_median_age','ocean_proximity'))
+
+# # pivot --> long to wide
+# # does not work due to some duplicate in index (TODO or find another dataset) 
+
+# melted2 = melted.drop_duplicates(melted.loc[:, ['longitude', 'latitude']])
+# pivoted = melted2.pivot(index=('longitude', 'latitude'),
+#                         columns='variable',
+#                         values='value')
+
