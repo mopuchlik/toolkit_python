@@ -12,10 +12,10 @@ def fun_example(data):
 
 def fun_example_copy(data):
 
-    data1 = data.copy()
+    data = data.copy()
 
-    x = data1.loc[data1["b"] >= 5]
-    data1["d"] = data1["a"] + data1["b"]
+    x = data.loc[data["b"] >= 5]
+    data["d"] = data["a"] + data["b"]
 
     return x
 
