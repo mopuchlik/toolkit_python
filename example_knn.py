@@ -1,4 +1,4 @@
-#%%
+# %%
 
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
@@ -6,23 +6,19 @@ from sklearn.neighbors import KNeighborsClassifier
 # %%
 
 # create dataset
-X = np.array([[0, 2.1, 1.45],
-              [1, 1.18, 1.33],
-              [0, 1.22, 1.27],
-              [1, -0.21, -1.19]])
+X = np.array([[0, 2.1, 1.45], [1, 1.18, 1.33], [0, 1.22, 1.27], [1, -0.21, -1.19]])
 
 # add NaNs
-X_with_nan = np.array([[np.nan, 0.87, 1.31],
-                       [np.nan, -0.67, -0.22]])
+X_with_nan = np.array([[np.nan, 0.87, 1.31], [np.nan, -0.67, -0.22]])
 
-#%% knn
+# %% knn
 
 # explanatory var
 # X[:, 1:]
 # var to be explained
 # X[:, 0]
 
-class_knn = KNeighborsClassifier(3, weights='distance')
+class_knn = KNeighborsClassifier(3, weights="distance")
 trained_model = class_knn.fit(X[:, 1:], X[:, 0])
 
 # %% apply model to impute nans
