@@ -155,10 +155,14 @@ numbers = [1, 2, 3, 4, 5]
 sqrs_of_numbers = map(square, numbers)
 next(sqrs_of_numbers)
 
-
 sqrs_of_numbers2 = map(lambda x: x * x, [1, 2, 3, 4])
 next(sqrs_of_numbers2)
 
+# %%
+bases = [10, 20, 30, 40, 50]
+index = [1, 2, 3, 4, 5]
+powers = list(map(pow, bases, index))
+powers
 
 # %% droping columns by name
 cols_1 = ["latitude", "longitude"]
