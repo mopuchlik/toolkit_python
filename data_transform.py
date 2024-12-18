@@ -11,9 +11,9 @@ import numpy as np
 
 # %% current directory
 # ### Get the current working directory (adjust)
-# cwd = "/home/trurl/Dropbox/programowanie/python_general/"
+cwd = "/home/michal/Dropbox/programowanie/python_general/"
 
-cwd = "D:/Dropbox/programowanie/python_general"
+# cwd = "D:/Dropbox/programowanie/python_general"
 
 # TODO: for some reason does not work in Linux
 # cwd = os.path.dirname(os.path.abspath("__file__"))
@@ -144,6 +144,21 @@ df2["median_income"] = df2["median_income"].map(floorer)
 
 # applymap works element-wise for dataframe only (map is for series)
 df3 = df3.applymap(floorer)
+
+
+# %% map example
+def square(x):
+    return x * x
+
+
+numbers = [1, 2, 3, 4, 5]
+sqrs_of_numbers = map(square, numbers)
+next(sqrs_of_numbers)
+
+
+sqrs_of_numbers2 = map(lambda x: x * x, [1, 2, 3, 4])
+next(sqrs_of_numbers2)
+
 
 # %% droping columns by name
 cols_1 = ["latitude", "longitude"]
