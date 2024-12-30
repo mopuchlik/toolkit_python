@@ -25,4 +25,18 @@ def count_letters(text):
 # count_letters("tenant")
 count_letters("a long string with a lot of letters")
 
+# %% example of while loop
+
+# Sample dictionary
+my_dict = {"apple": 3, "banana": 5, "cherry": 2}
+print(my_dict)
+
+# While the dictionary is not empty
+while my_dict:
+    # Get and remove an item using popitem()
+    key, value = my_dict.popitem()
+    print(f"Processing {key}: {value}")
+
+print(my_dict)
+
 # %%
