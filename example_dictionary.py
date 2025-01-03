@@ -10,6 +10,18 @@ file_counts.keys()
 # %%
 file_counts.values()
 
+# %% change single value
+file_counts["jpg"]
+file_counts["jpg"] = 100
+file_counts
+
+# %% add/change multiple values
+file_counts.update({"jpg": 10, "xxx": 2, "avi": 4})
+file_counts
+
+# %% remove key and value
+del file_counts["avi"]
+
 
 # %% zlicza litery
 def count_letters(text):
@@ -39,4 +51,38 @@ while my_dict:
 
 print(my_dict)
 
+# %%
+# example switch keys with values
+
+
+def groups_per_user(group_dictionary):
+    user_groups = {}
+    # Go through group_dictionary
+    for groups, users in group_dictionary.items():
+        # Now go through the users in the group
+        for user in users:
+            # Now add the group to the the list of
+            # groups for this user, creating the entry
+            # in the dictionary if necessary
+            if user in user_groups:
+                user_groups[user].append(groups)
+            else:
+                user_groups.update({user: [groups]})
+
+    return user_groups
+
+
+# %%
+groups_per_user(
+    {
+        "local": ["admin", "userA"],
+        "public": ["admin", "userB"],
+        "administrator": ["admin"],
+    }
+)
+
+# %%
+wardrobe = {"shirt": ["red", "blue", "white"], "jeans": ["blue", "black"]}
+new_items = {"jeans": ["white"], "scarf": ["yellow"], "socks": ["black", "brown"]}
+wardrobe.update(new_items)
 # %%
