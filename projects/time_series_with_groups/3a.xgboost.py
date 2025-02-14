@@ -208,7 +208,7 @@ print(f"Final WMAPE: {final_wmape:.4f}")
 print(f"MSE: {mean_squared_error(y_train, y_pred):.2f}")
 print(f"R² Score: {r2_score(y_train, y_pred):.2f}")
 
-# # ✅ Fit the Model with WMAPE Evaluation
+# # Fit the Model with WMAPE Evaluation
 # model.fit(
 #     X_train,
 #     y_train,
@@ -231,6 +231,81 @@ model_y_fitted = yX_train[["key", "date", "y"]]
 model_y_fitted = pd.concat([model_y_fitted, y_pred_name], axis=1)
 
 plot_linear(df=model_y_fitted, series1="y", series2="y_pred")
+
+# %% realisation vs predict linear plt
+
+lmplt = sns.lmplot(
+    x="y", y="y_pred", data=model_y_fitted, line_kws={"color": "black", "linewidth": 2}
+)
+ax = lmplt.ax
+ax.plot(
+    [model_y_fitted["y"].min(), model_y_fitted["y"].max()],
+    [model_y_fitted["y"].min(), model_y_fitted["y"].max()],
+    linestyle="--",
+    color="red",
+    linewidth=2,
+    label="45° Line",
+)
+
+# %% out-of-time plot
+
+yX_oot = yX_train.copy()
+
+N_obs = 6
+
+
+# train on observations without last N_obs
+# test with last N_obs
+yX_oot_trim = (
+    yX_oot.groupby("key", group_keys=False)
+    .apply(lambda x: x.iloc[:-N_obs])
+    .reset_index()
+).drop(columns=["index"])
+
+yX_oot_trim_last = (
+    yX_oot.groupby("key", group_keys=False)
+    .apply(lambda x: x.iloc[-N_obs:])
+    .reset_index()
+).drop(columns=["index"])
+
+# check
+print(f"CHECK: {yX_oot.shape[0] - yX_oot_trim.shape[0] - yX_oot_trim_last.shape[0]}")
+
+y_oot_trim = yX_oot_trim[["y"]]
+X_oot_trim = yX_oot_trim.drop(columns=["y", "date"])
+
+y_oot_trim_last = yX_oot_trim_last[["y"]]
+X_oot_trim_last = yX_oot_trim_last.drop(columns=["y", "date"])
+
+# define model
+model = xgb.XGBRegressor(
+    objective="reg:squarederror",  # Use standard regression objective
+    n_estimators=150,
+    learning_rate=0.05,
+    max_depth=2,
+    reg_lambda=0.5,
+    # random_state=42,
+)
+
+# fit model
+
+model.fit(X_oot_trim, y_oot_trim)
+
+# predict on last N_obs
+
+y_pred_last = model.predict(X_oot_trim_last)
+
+
+y_pred_last_name = pd.DataFrame({"y_pred": y_pred_last})
+yX_oot_trim_last = pd.concat(
+    [yX_oot_trim_last[["key", "date"]], y_pred_last_name], axis=1
+)
+
+# join with main set
+yX_oot = pd.merge(yX_oot, yX_oot_trim_last, on=["key", "date"])
+
+# plot
+plot_linear(df=yX_oot, series1="y", series2="y_pred")
 
 # %% residuals plt
 
@@ -423,4 +498,4 @@ wmape_scorer = make_scorer(wmape, greater_is_better=False)
 scores = cross_val_score(model, X_train, y_train, cv=cv, scoring=wmape_scorer)
 print(f"Cross-Validation WMAPE: {-np.mean(scores):.4f}")
 
-# %%
+# %% out-of-time
