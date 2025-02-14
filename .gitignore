@@ -5,3 +5,8 @@
 /include
 /lib
 __pycache__/example_module_testing.cpython-310.pyc
+projects/time_series_with_groups/X_test_T2.csv
+projects/time_series_with_groups/X_train_T2.csv
+projects/time_series_with_groups/y_test_T2.csv
+projects/time_series_with_groups/y_train_T2.csv
+projects/time_series_with_groups/yX_train_clean.csv
