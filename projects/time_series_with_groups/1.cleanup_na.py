@@ -31,6 +31,11 @@ yX_train = pd.merge(y_train, X_train, on=["key", "date"])
 # key as int -- it is used by a model used further on
 yX_train["key"] = yX_train["key"].astype("int")
 
+# sort by date in groups just in case
+yX_train = yX_train.groupby("key", group_keys=False).apply(
+    lambda x: x.sort_values("date")
+)
+
 # list of original features
 reg_list = [col for col in X_train.columns if "channel_" in col]
 
