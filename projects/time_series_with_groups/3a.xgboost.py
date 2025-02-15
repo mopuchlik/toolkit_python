@@ -278,11 +278,11 @@ ax.plot(
 )
 
 # %% out-of-time plot
-
+# NOTE for oot key_target should be calculated for trimmed X_train
+# here it is based on full sample, i.e. yX_train
 yX_oot = yX_train.copy()
 
 N_obs = 12
-
 
 # train on observations without last N_obs
 # test with last N_obs
@@ -308,12 +308,19 @@ y_oot_trim_last = yX_oot_trim_last[["y"]]
 X_oot_trim_last = yX_oot_trim_last.drop(columns=["y", "date", "key"])
 
 # fit model
-model_final.fit(X_oot_trim, y_oot_trim)
+model_oot = xgb.XGBRegressor(
+    objective="reg:squarederror",  # Use standard regression objective
+    n_estimators=100,
+    learning_rate=0.11,
+    max_depth=2,
+    reg_alpha=0,
+    reg_lambda=0.5,
+    # random_state=42,
+)
+model_oot.fit(X_oot_trim, y_oot_trim)
 
 # predict on last N_obs
-
-y_pred_last = model_final.predict(X_oot_trim_last)
-
+y_pred_last = model_oot.predict(X_oot_trim_last)
 
 y_pred_last_name = pd.DataFrame({"y_pred": y_pred_last})
 yX_oot_trim_last = pd.concat(
