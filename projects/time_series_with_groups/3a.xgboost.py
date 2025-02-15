@@ -24,6 +24,13 @@ os.chdir(cwd)
 # cwd = os.getcwd()
 print("Current working directory: {0}".format(os.getcwd()))
 
+# flag whether to do GridCV
+grid_check_flag = False
+
+# flag for learning curve
+learning_curve_flag = False
+
+
 # %%
 # loading a csv file
 path_yX_train = "yX_train_clean.csv"
@@ -60,6 +67,11 @@ yX_train = pd.concat([yX_train, quarter_dummies], axis=1)
 
 yX_train.drop(columns=["month"], inplace=True)
 yX_train.drop(columns=["quarter"], inplace=True)
+
+# %% prepare key_target as mean y in a group
+# NOTE: separately for train and test
+yX_train["key_target"] = yX_train.groupby("key")["y"].transform("mean")
+
 
 # %% calculate rolling means
 window_size = 2
@@ -138,8 +150,10 @@ def plot_linear(
 # %%
 
 y_train = yX_train["y"]
-# X_train = yX_train.drop(columns=["key", "date", "y"])
-X_train = yX_train.drop(columns=["y", "date"])
+# X_train = yX_train.drop(columns=["date", "y"])
+
+# train for key_target
+X_train = yX_train.drop(columns=["y", "date", "key"])
 # X_train[["date"]] = int(X_train[["date"]])
 
 # %%
@@ -163,45 +177,57 @@ def wmape(y_true, y_pred):
 
 
 # %%
-model = xgb.XGBRegressor(
-    objective="reg:squarederror",  # Use standard regression objective
-    n_estimators=100,
-    learning_rate=0.1,
-    max_depth=3,
-    random_state=42,
-)
 
+if grid_check_flag:
+    model = xgb.XGBRegressor(
+        objective="reg:squarederror",  # Use standard regression objective
+        n_estimators=100,
+        learning_rate=0.1,
+        max_depth=3,
+        random_state=42,
+    )
 
-# Grid Search to Optimize for WMAPE
-param_grid = {
-    "max_depth": [2, 3, 4, 5],
-    "learning_rate": [0.05, 0.075, 0.11],
-    "n_estimators": [50, 100, 150, 200],
-    "reg_lambda": [0.5, 1, 5],
-    "reg_alpha": [0, 0.5, 1],
-}
-grid_search = GridSearchCV(
-    estimator=model,
-    param_grid=param_grid,
-    scoring="neg_mean_absolute_error",  # Use MAE as a proxy for WMAPE
-    cv=3,
-    verbose=1,
-)
+    # Grid Search to Optimize for WMAPE
+    param_grid = {
+        "max_depth": [2, 3, 4, 5],
+        "learning_rate": [0.05, 0.075, 0.11],
+        "n_estimators": [50, 100, 150, 200],
+        "reg_lambda": [0.5, 1, 5],
+        "reg_alpha": [0, 0.5, 1],
+    }
+    grid_search = GridSearchCV(
+        estimator=model,
+        param_grid=param_grid,
+        scoring="neg_mean_absolute_error",  # Use MAE as a proxy for WMAPE
+        cv=3,
+        verbose=1,
+    )
 
-grid_search.fit(X_train, y_train)
-print("Best Params:", grid_search.best_params_)
+    grid_search.fit(X_train, y_train)
+    print("Best Params:", grid_search.best_params_)
+    # Best Params:
+    # {
+    # 'learning_rate': 0.11,
+    # 'max_depth': 2,
+    # 'n_estimators': 100,
+    # 'reg_alpha': 0,
+    # 'reg_lambda': 0.5}
 
 # %%
-model = xgb.XGBRegressor(
+
+X_train_cols = X_train.columns
+
+model_final = xgb.XGBRegressor(
     objective="reg:squarederror",  # Use standard regression objective
-    n_estimators=150,
-    learning_rate=0.05,
+    n_estimators=100,
+    learning_rate=0.11,
     max_depth=2,
+    reg_alpha=0,
     reg_lambda=0.5,
     # random_state=42,
 )
-model.fit(X_train, y_train)
-y_pred = model.predict(X_train)
+model_final.fit(X_train, y_train)
+y_pred = model_final.predict(X_train)
 
 final_wmape = wmape(y_train, y_pred)
 print(f"Final WMAPE: {final_wmape:.4f}")
@@ -209,7 +235,7 @@ print(f"MSE: {mean_squared_error(y_train, y_pred):.2f}")
 print(f"R² Score: {r2_score(y_train, y_pred):.2f}")
 
 # # Fit the Model with WMAPE Evaluation
-# model.fit(
+# model_final.fit(
 #     X_train,
 #     y_train,
 #     eval_set=[(X_train, y_train)],
@@ -220,7 +246,7 @@ print(f"R² Score: {r2_score(y_train, y_pred):.2f}")
 # %% feature importance plot
 
 
-xgb.plot_importance(model, importance_type="weight")
+xgb.plot_importance(model_final, importance_type="weight")
 plt.show()
 
 
@@ -235,7 +261,11 @@ plot_linear(df=model_y_fitted, series1="y", series2="y_pred")
 # %% realisation vs predict linear plt
 
 lmplt = sns.lmplot(
-    x="y", y="y_pred", data=model_y_fitted, line_kws={"color": "black", "linewidth": 2}
+    x="y",
+    y="y_pred",
+    data=model_y_fitted,
+    aspect=1,
+    line_kws={"color": "black", "linewidth": 2},
 )
 ax = lmplt.ax
 ax.plot(
@@ -251,7 +281,7 @@ ax.plot(
 
 yX_oot = yX_train.copy()
 
-N_obs = 6
+N_obs = 12
 
 
 # train on observations without last N_obs
@@ -272,28 +302,17 @@ yX_oot_trim_last = (
 print(f"CHECK: {yX_oot.shape[0] - yX_oot_trim.shape[0] - yX_oot_trim_last.shape[0]}")
 
 y_oot_trim = yX_oot_trim[["y"]]
-X_oot_trim = yX_oot_trim.drop(columns=["y", "date"])
+X_oot_trim = yX_oot_trim.drop(columns=["y", "date", "key"])
 
 y_oot_trim_last = yX_oot_trim_last[["y"]]
-X_oot_trim_last = yX_oot_trim_last.drop(columns=["y", "date"])
-
-# define model
-model = xgb.XGBRegressor(
-    objective="reg:squarederror",  # Use standard regression objective
-    n_estimators=150,
-    learning_rate=0.05,
-    max_depth=2,
-    reg_lambda=0.5,
-    # random_state=42,
-)
+X_oot_trim_last = yX_oot_trim_last.drop(columns=["y", "date", "key"])
 
 # fit model
-
-model.fit(X_oot_trim, y_oot_trim)
+model_final.fit(X_oot_trim, y_oot_trim)
 
 # predict on last N_obs
 
-y_pred_last = model.predict(X_oot_trim_last)
+y_pred_last = model_final.predict(X_oot_trim_last)
 
 
 y_pred_last_name = pd.DataFrame({"y_pred": y_pred_last})
@@ -302,10 +321,34 @@ yX_oot_trim_last = pd.concat(
 )
 
 # join with main set
-yX_oot = pd.merge(yX_oot, yX_oot_trim_last, on=["key", "date"])
+yX_oot = pd.merge(yX_oot, yX_oot_trim_last, on=["key", "date"], how="left")
+yX_oot.fillna(0)
 
 # plot
 plot_linear(df=yX_oot, series1="y", series2="y_pred")
+
+# %% cross validation
+
+# Perform n-Fold Cross-Validation
+cv = KFold(n_splits=20, shuffle=True, random_state=42)
+# negative because sklearn minimizes scores
+scores = cross_val_score(
+    model_final, X_train, y_train, cv=cv, scoring="neg_mean_absolute_error"
+)
+print(f"Cross-Validation MAE: {-np.mean(scores):.4f}")
+
+
+# %%
+# version with WMAPE
+# Define a custom WMAPE scorer
+def wmape(y_true, y_pred):
+    return np.sum(np.abs(y_true - y_pred)) / np.sum(np.abs(y_true))
+
+
+wmape_scorer = make_scorer(wmape, greater_is_better=False)
+scores = cross_val_score(model_final, X_train, y_train, cv=cv, scoring=wmape_scorer)
+print(f"Cross-Validation WMAPE: {-np.mean(scores):.4f}")
+
 
 # %% residuals plt
 
@@ -329,12 +372,6 @@ plt.axvline(0, color="red", linestyle="--")  # Zero Line
 plt.title("Distribution of Residuals")
 plt.show()
 
-
-# %%
-# import xgboost as xgb
-
-# print(xgb.__version__)  # ✅ Should be ≥ 1.3.0
-
 # %%
 
 
@@ -356,16 +393,8 @@ def plot_learning_curves(model, X, y):
 
 
 # %%
-
-model = xgb.XGBRegressor(
-    objective="reg:squarederror",  # Use standard regression objective
-    n_estimators=150,
-    learning_rate=0.05,
-    max_depth=2,
-    reg_lambda=0.5,
-    # random_state=42,
-)
-plot_learning_curves(model, X_train, y_train)
+if learning_curve_flag:
+    plot_learning_curves(model_final, X_train, y_train)
 
 # %% ##########################
 # prepare X_test
@@ -422,6 +451,21 @@ print(f"number of NAs of original set after cleanup: {X_test.isna().sum().sum()}
 X_test_orig = X_test.copy()
 X_test = X_test.drop(columns=["date"])
 
+# key_taget for test
+# NOTE: here in test I do not have y so I use all key_target
+key_taget_map = yX_train.groupby("key").agg(key_target=("key", "mean"))
+
+X_test = pd.merge(X_test, key_taget_map, on="key")
+X_test.drop(columns="key", inplace=True)
+# X_test["key_target"] = X_test.groupby("key")["y"].transform("mean")
+# X_test.drop(columns=["key"])
+
+# sort columns in the same way
+
+print(f"CHECK1: {X_train_cols.isin(X_train.columns)}")
+print(f"CHECK2: {X_test.columns.isin(X_train_cols)}")
+X_test = X_test[X_train.columns]
+
 # %% SHAP plot
 # Shapley Additive Explanations
 # algorithms to explain ensemble tree models
@@ -431,7 +475,7 @@ X_test = X_test.drop(columns=["date"])
 # Left/Right: Negative/positive impact on the prediction.
 # NOTE: useful mostly for categorical variables, for numerical use bar plot
 
-explainer = shap.Explainer(model)
+explainer = shap.Explainer(model_final)
 shap_values = explainer(X_test)
 # ### Beeswarm
 # mean absolute value of the SHAP values for each feature. (default)
@@ -462,40 +506,16 @@ shap.decision_plot(base_val, shap_val)
 from sklearn.inspection import PartialDependenceDisplay
 
 PartialDependenceDisplay.from_estimator(
-    model, X_test, features=["channel_101", "channel_17"]
+    model_final, X_test, features=["channel_101", "channel_17"]
 )
 plt.show()
 
 
 # %% plot of predict
-y_test_pred = model.predict(X_test)
+y_test_pred = model_final.predict(X_test)
 
 y_test_pred_name = pd.DataFrame({"y_pred": y_test_pred})
 model_y_fitted = X_test_orig[["key", "date"]]
 model_y_fitted = pd.concat([model_y_fitted, y_pred_name], axis=1)
 
 plot_linear(df=model_y_fitted, series1="y_pred", series2="y_pred")
-
-# %% cross validation
-
-# Perform n-Fold Cross-Validation
-cv = KFold(n_splits=20, shuffle=True, random_state=42)
-# negative because sklearn minimizes scores
-scores = cross_val_score(
-    model, X_train, y_train, cv=cv, scoring="neg_mean_absolute_error"
-)
-print(f"Cross-Validation MAE: {-np.mean(scores):.4f}")
-
-
-# %%
-# version with WMAPE
-# Define a custom WMAPE scorer
-def wmape(y_true, y_pred):
-    return np.sum(np.abs(y_true - y_pred)) / np.sum(np.abs(y_true))
-
-
-wmape_scorer = make_scorer(wmape, greater_is_better=False)
-scores = cross_val_score(model, X_train, y_train, cv=cv, scoring=wmape_scorer)
-print(f"Cross-Validation WMAPE: {-np.mean(scores):.4f}")
-
-# %% out-of-time
