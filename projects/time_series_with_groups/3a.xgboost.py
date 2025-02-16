@@ -459,8 +459,7 @@ X_test_orig = X_test.copy()
 X_test = X_test.drop(columns=["date"])
 
 # key_taget for test
-# NOTE: here in test I do not have y so I use all key_target
-# y should be predicted using e.g. ARIMA and then used to generate key_target
+# NOTE: here in test I do not have y so old key_target is used
 key_taget_map = yX_train.groupby("key").agg(key_target=("key", "mean"))
 
 X_test = pd.merge(X_test, key_taget_map, on="key")
