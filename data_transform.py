@@ -11,7 +11,7 @@ import numpy as np
 
 # %% current directory
 # ### Get the current working directory (adjust)
-cwd = "/home/michal/Dropbox/programowanie/python_general/"
+cwd = "/home/michal/silos/Dropbox/programowanie/python_general/"
 
 # cwd = "D:/Dropbox/programowanie/python_general"
 
@@ -212,6 +212,12 @@ df6 = df.copy()
 df6.loc[df6["ocean_proximity"] == "INLAND", "ocean_proximity"] = "aa"
 df6["ocean_proximity"].value_counts()
 
+
+# %% duplicates
+
+boolean = df.duplicated(subset=["longitude"])
+dups = df[boolean]
+dups
 
 # %% compares
 
