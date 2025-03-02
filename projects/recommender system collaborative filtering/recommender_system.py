@@ -67,13 +67,39 @@ print(f"--- KNN recommended movies (cold start): {recommended_movies_knn}")
 
 model_svd = recfun.svd_model_fit(ratings_df=df_nodup, n_factors=50)
 recommended_movies_svd = recfun.recommend_movies_svd(
-    user_id=1, ratings_df=df, model=model_svd, num_recommendations=5
+    user_id=1, ratings_df=df_nodup, model=model_svd, num_recommendations=5
 )
 print(f"--- SVD recommended movies: {recommended_movies_svd}")
 
 # %% SVD cold start case
 
 recommended_movies_svd = recfun.recommend_movies_svd(
-    user_id=2000, ratings_df=df, model=model_svd, num_recommendations=5
+    user_id=2000, ratings_df=df_nodup, model=model_svd, num_recommendations=5
 )
 print(f"--- SVD recommended movies (cold start): {recommended_movies_svd}")
+
+# %% some tests
+
+x = pd.DataFrame(
+    {
+        "user_id": [1, 1, 2, 2, 3, 3, 3],
+        "movie_id": [10, 20, 10, 30, 10, 20, 50],
+        "rating": [4, 5, 3, 2, 4, 5, 5],
+        "timestamp": [1000, 2000, 1500, 2500, 3000, 4000, 5000],
+    }
+)
+x
+
+# %%
+recommended_movies_knn = recfun.recommend_movies_knn(
+    user_id=1, ratings_df=x, k=2, num_recommendations=2
+)
+print(f"--- KNN recommended movies: {recommended_movies_knn}")
+
+# %%
+model_svd = recfun.svd_model_fit(ratings_df=x, n_factors=2)
+recommended_movies_svd = recfun.recommend_movies_svd(
+    user_id=1, ratings_df=x, model=model_svd, num_recommendations=2
+)
+print(f"--- SVD recommended movies: {recommended_movies_svd}")
+# %%
