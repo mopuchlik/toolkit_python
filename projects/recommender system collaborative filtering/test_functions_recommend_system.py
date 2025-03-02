@@ -18,8 +18,8 @@ def sample_df():
     return pd.DataFrame(
         {
             "user_id": [1, 1, 2, 2, 3, 3, 3],
-            "movie_id": [10, 20, 10, 30, 20, 40, 50],
-            "rating": [4, 5, 3, 2, 4, 3, 1],
+            "movie_id": [10, 20, 10, 30, 10, 20, 50],
+            "rating": [4, 5, 3, 2, 4, 5, 5],
             "timestamp": [1000, 2000, 1500, 2500, 3000, 4000, 5000],
         }
     )
@@ -31,7 +31,7 @@ def test_data_prep(sample_df):
     sample_df = sample_df.rename(columns={"user_id2": "user_id"})
     # add a column
     sample_df["test"] = 1
-    # test
+    # change column name to non-standard
     result = data_prep(sample_df, user_id="user_id2")
     # check whether columns were changed
     assert list(result.columns) == ["user_id", "movie_id", "rating", "timestamp"]
@@ -50,7 +50,7 @@ def test_remove_duplicates(sample_df):
 # Test recommend_movies_knn
 def test_recommend_movies_knn_coldstart(sample_df):
     result = recommend_movies_knn(4, sample_df, k=2, num_recommendations=2)
-    assert result == [20, 10]
+    assert result == [20, 50]
 
 
 # Test recommend_movies_knn, user_id not in a set (cold start)
@@ -59,6 +59,7 @@ def test_recommend_movies_knn(sample_df):
     assert isinstance(result, list)
     assert len(result) == 2
     assert all(isinstance(x, (int, np.int64)) for x in result)
+    assert result == [50, 30]
 
 
 # Test svd_model_fit
@@ -71,11 +72,12 @@ def test_svd_model_fit(sample_df):
 def test_recommend_movies_svd(sample_df):
     model = svd_model_fit(sample_df)
     result = recommend_movies_svd(
-        sample_df, user_id=1, model=model, num_recommendations=3
+        user_id=1, ratings_df=sample_df, model=model, num_recommendations=2
     )
     assert isinstance(result, list)
-    assert len(result) == 3
+    assert len(result) == 2
     assert all(isinstance(x, (int, np.int64)) for x in result)
+    assert result == [50, 30]
 
 
 # Test recommend_movies_svd, user_id not in a set (cold start)
@@ -84,4 +86,4 @@ def test_recommend_movies_svd_coldstart(sample_df):
     result = recommend_movies_svd(
         sample_df, user_id=4, model=model, num_recommendations=3
     )
-    assert result == [20, 10, 40]
+    assert result == [20, 50, 10]
