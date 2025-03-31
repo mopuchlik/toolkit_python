@@ -10,3 +10,11 @@ projects/time_series_with_groups/X_train_T2.csv
 projects/time_series_with_groups/y_test_T2.csv
 projects/time_series_with_groups/y_train_T2.csv
 projects/time_series_with_groups/yX_train_clean.csv
+projects/recommender system collaborative filtering/__pycache__/functions_recommend_system.cpython-312-pytest-8.3.4.pyc
+projects/recommender system collaborative filtering/__pycache__/functions_recommend_system.cpython-312.pyc
+projects/recommender system collaborative filtering/__pycache__/functions_recommend_system.cpython-313.pyc
+projects/recommender system collaborative filtering/__pycache__/main.cpython-312-pytest-8.3.4.pyc
+projects/recommender system collaborative filtering/__pycache__/recommender_system.cpython-312-pytest-8.3.4.pyc
+projects/recommender system collaborative filtering/__pycache__/test_functions_recommend_system.cpython-312-pytest-8.3.4.pyc
+projects/recommender system collaborative filtering/__pycache__/test_main.cpython-312-pytest-8.3.4.pyc
+projects/recommender system collaborative filtering/__pycache__/test_svd_implementation.cpython-312-pytest-8.3.4.pyc
