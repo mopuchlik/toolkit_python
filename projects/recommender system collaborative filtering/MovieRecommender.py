@@ -139,7 +139,11 @@ class MovieRecommender:
 
         return recommendations.index.tolist()  # List of recommended movie_ids
 
-    def svd_model_fit(self, **kwargs) -> list:
+    def svd_model_fit(
+        self,
+        *args,
+        **kwargs,
+    ) -> list:
         """
         Fits the SVD model to provided dataset (Collaborative Filtering).
 
@@ -165,7 +169,7 @@ class MovieRecommender:
         full_trainset = data.build_full_trainset()
 
         # Train SVD model
-        model = SVD(**kwargs)
+        model = SVD(*args, **kwargs)
         model.fit(full_trainset)
 
         return model
