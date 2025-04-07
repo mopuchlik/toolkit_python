@@ -42,10 +42,10 @@ print(
 )
 
 start_time = time.time()
-model_svd = recommender.svd_model_fit()
+recommender.svd_model_fit()
 for i in range(1, n_user):
     recommended_movies_svd = recommender.recommend_movies_svd(
-        user_id=i, model=model_svd, num_recommendations=5
+        user_id=i, num_recommendations=5
     )
 print(
     f"--- SVD method --- Check for {n_user} users: {round(time.time() - start_time, 2)} seconds"

@@ -1,9 +1,11 @@
+from typing import Optional
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from surprise import Dataset, Reader, SVD
-from surprise.model_selection import train_test_split
-from surprise import accuracy
+
+# from surprise.model_selection import train_test_split
+# from surprise import accuracy
 
 
 class MovieRecommender:
@@ -14,6 +16,7 @@ class MovieRecommender:
         movie_id: str = "movie_id",
         rating: str = "rating",
         timestamp: str = "timestamp",
+        model: Optional[SVD] = None,
     ):
         """
         Initialize MovieRecommender with:
@@ -24,6 +27,7 @@ class MovieRecommender:
         - movie_id: column name for movie_id (default "movie_id")
         - rating: column name for rating (default "rating")
         - timestamp: column name for timestamp (default "timestamp")
+        - model: SVD model if this method is used
         """
 
         self.df = df
@@ -31,6 +35,7 @@ class MovieRecommender:
         self.movie_id = movie_id
         self.rating = rating
         self.timestamp = timestamp
+        self.model = model
 
     def data_prep(self) -> pd.DataFrame:
         """
@@ -172,11 +177,11 @@ class MovieRecommender:
         model = SVD(*args, **kwargs)
         model.fit(full_trainset)
 
-        return model
+        self.model = model
 
-    def recommend_movies_svd(
-        self, user_id, model, num_recommendations: int = 5
-    ) -> list:
+        return self.model
+
+    def recommend_movies_svd(self, user_id, num_recommendations: int = 5) -> list:
         """
         Recommends movies to a user using SVD (Collaborative Filtering) based on
         a fitted model.
@@ -214,7 +219,7 @@ class MovieRecommender:
 
         # Predict ratings for unrated movies
         predicted_ratings = [
-            (movie, model.predict(user_id, movie).est) for movie in unrated_movies
+            (movie, self.model.predict(user_id, movie).est) for movie in unrated_movies
         ]
 
         # Sort by highest predicted rating
