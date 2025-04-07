@@ -195,36 +195,43 @@ class MovieRecommender:
         Returns:
         - List of recommended movie_ids.
         """
-
-        # Get all unique movie IDs
-        all_movies = self.df[self.movie_id].unique()
-
-        # Check if the user exists in the dataset
-        if user_id not in self.df[self.user_id].values:
-            # Cold Start: Recommend movies with the highest average rating
-            top_movies = (
-                self.df.groupby(self.movie_id)[self.rating]
-                .mean()
-                .sort_values(ascending=False)
-                .head(num_recommendations)
-                .index.tolist()
+        if self.model is None:
+            raise ValueError(
+                "In order to run SVD recommender one must train model using svd_model_fit first."
             )
-            return top_movies
+        else:
+            # Get all unique movie IDs
+            all_movies = self.df[self.movie_id].unique()
 
-        # Get movies the user has already rated
-        rated_movies = self.df[self.df[self.user_id] == user_id][self.movie_id].values
+            # Check if the user exists in the dataset
+            if user_id not in self.df[self.user_id].values:
+                # Cold Start: Recommend movies with the highest average rating
+                top_movies = (
+                    self.df.groupby(self.movie_id)[self.rating]
+                    .mean()
+                    .sort_values(ascending=False)
+                    .head(num_recommendations)
+                    .index.tolist()
+                )
+                return top_movies
 
-        # Get movies the user has NOT rated
-        unrated_movies = [m for m in all_movies if m not in rated_movies]
+            # Get movies the user has already rated
+            rated_movies = self.df[self.df[self.user_id] == user_id][
+                self.movie_id
+            ].values
 
-        # Predict ratings for unrated movies
-        predicted_ratings = [
-            (movie, self.model.predict(user_id, movie).est) for movie in unrated_movies
-        ]
+            # Get movies the user has NOT rated
+            unrated_movies = [m for m in all_movies if m not in rated_movies]
 
-        # Sort by highest predicted rating
-        top_recommendations = sorted(
-            predicted_ratings, key=lambda x: x[1], reverse=True
-        )[:num_recommendations]
+            # Predict ratings for unrated movies
+            predicted_ratings = [
+                (movie, self.model.predict(user_id, movie).est)
+                for movie in unrated_movies
+            ]
 
-        return [movie for movie, rating in top_recommendations]
+            # Sort by highest predicted rating
+            top_recommendations = sorted(
+                predicted_ratings, key=lambda x: x[1], reverse=True
+            )[:num_recommendations]
+
+            return [movie for movie, rating in top_recommendations]
