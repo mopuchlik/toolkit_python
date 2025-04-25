@@ -42,15 +42,17 @@ import matplotlib.pyplot as plt
 
 # %% Define the number of cities and agents
 NUM_CITIES = 30
-NUM_AGENTS = 4
+NUM_AGENTS = 6
 DEPOTS = list(range(NUM_AGENTS))  # Starting depots for each agent
+N_GEN = 300  # number of generations/iterations
+N_POP = 10000  # number of initial guesses/population
 
 # global prob variables
+CX_PROB = 0.6  # crossover prob
+MUT_PROB = 0.3  # mutation prob
 
-CX_PROB = 0.5
-MUT_PROB = 0.5
 
-
+# %%
 def plot_routes(city_coords, depots, individual, title="Routes"):
     plt.close("all")  # Close all existing figures
     plt.figure(figsize=(8, 6))
@@ -78,8 +80,8 @@ def plot_routes(city_coords, depots, individual, title="Routes"):
     plt.show()
 
 
-# Generate random coordinates for cities
-random.seed(123)
+# %% Generate random coordinates for cities
+np.random.seed(123)
 city_coords = np.random.rand(NUM_CITIES, 2)
 plt.ion()  # Turn on interactive mode
 plot_routes(
@@ -90,7 +92,7 @@ plt.ioff()  # Turn off interactive mode after the loop
 
 # Compute the distance matrix between cities
 distance_matrix = np.linalg.norm(city_coords[:, np.newaxis] - city_coords, axis=2)
-
+# print(distance_matrix)
 
 # %%
 
@@ -198,17 +200,18 @@ toolbox.register("select", tools.selTournament, tournsize=3)
 # Main function with custom evolutionary loop
 def main():
     random.seed(42)
-    pop = toolbox.population(n=50)
+    pop = toolbox.population(n=N_POP)
     hof = tools.HallOfFame(1)
     stats = tools.Statistics(lambda ind: ind.fitness.values)
-    stats.register("avg", np.mean)
-    stats.register("min", np.min)
+    # stats.register("avg", np.mean)
+    # stats.register("min", np.min)
+    stats.register("max", np.max)
 
     # Evaluate the initial population
     for ind in pop:
         ind.fitness.values = toolbox.evaluate(ind)
 
-    for gen in range(1000):
+    for gen in range(N_GEN):
         # Select and clone the next generation individuals
         offspring = toolbox.select(pop, len(pop))
         offspring = list(map(toolbox.clone, offspring))
