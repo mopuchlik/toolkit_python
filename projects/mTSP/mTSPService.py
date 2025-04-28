@@ -53,6 +53,7 @@ class mTSPService:
         city_coords: npt.NDArray[np.float64],
         time_windows: List[Tuple[Union[float, np.float64], Union[float, np.float64]]],
         service_times: List[float],
+        depot_start_times: Union[List[float], None] = None,  # depot start_time
         n_gen: int = 50,  # number of generations/iterations of the algorithm
         n_population: int = 1000,  # number of initial guesses/population
         cx_prob: float = 0.6,  # crossover probability
@@ -76,6 +77,13 @@ class mTSPService:
         self.mut_prob = mut_prob
         self.theta = theta
         self.penalty_const = penalty_const
+
+        if depot_start_times is None:
+            self.depot_start_times = [
+                0.0
+            ] * self.num_agents  # Default to 0 if not provided
+        else:
+            self.depot_start_times = depot_start_times
 
         # Compute and store the distance matrix once at the beginning
         self.distance_matrix = self.create_dist_matrix()
@@ -192,7 +200,7 @@ class mTSPService:
 
         for i, route in enumerate(individual):
             if route:
-                current_time = 0
+                current_time = self.depot_start_times[i]
                 current_city = self.depots[i]
                 for next_city in route:
                     travel_time = self.distance_to_time(
@@ -254,6 +262,7 @@ class mTSPService:
         - agent_idx: Index of the agent.
         - route: List of city indices assigned to the agent.
         - self.depots: List of depot indices for each agent.
+        - self.depot_start_times: start time from a given depot.
         - self.distance_matrix: 2D numpy array with distances between cities.
         - self.theta: Scalar value to convert distance to time.
         - self.service_times: List of service times for each city.
@@ -264,7 +273,7 @@ class mTSPService:
         """
         depot = self.depots[agent_idx]
         schedule = []
-        current_time = 0.0
+        current_time = self.depot_start_times[agent_idx]
         prev_location = depot
 
         # Start from depot
@@ -519,12 +528,15 @@ TIME_WINDOWS[9] = (0.75, 1.75)
 TIME_WINDOWS[12] = (0.75, 1.75)
 TIME_WINDOWS[13] = (0.5, 1.5)
 
+DEPOT_START_TIMES = [x / 10 for x in DEPOTS]
+
 if __name__ == "__main__":
 
     mstp_to_run = mTSPService(
         num_cities=NUM_CITIES,
         num_agents=NUM_AGENTS,
         depots=DEPOTS,
+        depot_start_times=DEPOT_START_TIMES,
         city_coords=CITY_COORDS,
         time_windows=TIME_WINDOWS,
         service_times=SERVICE_TIMES,
