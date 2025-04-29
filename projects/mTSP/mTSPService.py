@@ -332,7 +332,10 @@ class mTSPService:
 
     def plot_routes(self, individual, title="Routes"):
         """
-        Plotting function
+        Routes plotting function.
+        If there is a binding time_window then
+        - green annotation means that the window constraint is met,
+        - red otherwise.
         """
 
         plt.close("all")  # Close all existing figures
@@ -424,6 +427,97 @@ class mTSPService:
         plt.ylabel("Y Coordinate")
         plt.grid(True)
         plt.show()
+
+    # TO FIX ##########
+    # def plot_routes(self, individual, title="Routes"):
+    #     """
+    #     Plotting function that uses compute_agent_schedule to display routes with annotations.
+    #     If there is a binding time_window green annotation means that it is met, red otherwise.
+    #     """
+    #     import matplotlib.pyplot as plt
+    #     import numpy as np
+
+    #     plt.close("all")  # Close all existing figures
+    #     plt.figure(figsize=(8, 6))
+    #     ax = plt.gca()
+
+    #     # Plot all cities
+    #     plt.scatter(
+    #         self.city_coords[:, 0], self.city_coords[:, 1], c="gray", label="Cities"
+    #     )
+
+    #     # Highlight depots
+    #     for i, depot in enumerate(self.depots):
+    #         plt.scatter(
+    #             self.city_coords[depot, 0],
+    #             self.city_coords[depot, 1],
+    #             c="red",
+    #             label=f"Depot {i+1}",
+    #         )
+
+    #     # Assign distinct colors for each agent
+    #     colors = ["blue", "green", "orange", "purple", "cyan", "magenta"]
+
+    #     for i, route in enumerate(individual):
+    #         if route:
+    #             # Compute the schedule for the agent
+    #             df = self.compute_agent_schedule(i, route)
+
+    #             # Extract city indices from the schedule
+    #             city_indices = [int(loc.split()[-1]) for loc in df["Location"]]
+
+    #             # Get coordinates for the path
+    #             x = [self.city_coords[city][0] for city in city_indices]
+    #             y = [self.city_coords[city][1] for city in city_indices]
+
+    #             # Plot the route
+    #             plt.plot(x, y, color=colors[i % len(colors)], label=f"Agent {i+1}")
+
+    #             # Annotate each city with arrival and end times
+    #             for idx, row in df.iterrows():
+    #                 if "City" in row["Location"]:
+    #                     city = int(row["Location"].split()[-1])
+    #                     arrival_time = row["Arrival Time in City"]
+    #                     end_time = row["End Time in City"]
+    #                     annotation_text = (
+    #                         f"{city}\nArr: {arrival_time:.1f}\nEnd: {end_time:.1f}"
+    #                     )
+    #                     text_color = "black"
+
+    #                     # Check if time window is violated
+    #                     if row["Time Window"] is not None:
+    #                         window_start, window_end = row["Time Window"]
+    #                         if window_start <= arrival_time <= window_end:
+    #                             text_color = "green"
+    #                             annotation_text += (
+    #                                 f"\nWindow: [{window_start}, {window_end}]"
+    #                             )
+    #                         else:
+    #                             text_color = "red"
+    #                             annotation_text += (
+    #                                 f"\nWindow: [{window_start}, {window_end}]"
+    #                             )
+
+    #                     ax.annotate(
+    #                         annotation_text,
+    #                         (
+    #                             self.city_coords[city][0],
+    #                             self.city_coords[city][1],
+    #                         ),
+    #                         textcoords="offset points",
+    #                         xytext=(0, 10),
+    #                         ha="center",
+    #                         color=text_color,
+    #                         fontsize=8,
+    #                         bbox=dict(boxstyle="round,pad=0.3", fc="yellow", alpha=0.5),
+    #                     )
+
+    #     plt.title(title)
+    #     plt.legend()
+    #     plt.xlabel("X Coordinate")
+    #     plt.ylabel("Y Coordinate")
+    #     plt.grid(True)
+    #     plt.show()
 
     def run_mTSP(self):
         random.seed(42)
@@ -532,7 +626,7 @@ DEPOT_START_TIMES = [x / 10 for x in DEPOTS]
 
 if __name__ == "__main__":
 
-    mstp_to_run = mTSPService(
+    mtsp_to_run = mTSPService(
         num_cities=NUM_CITIES,
         num_agents=NUM_AGENTS,
         depots=DEPOTS,
@@ -548,4 +642,4 @@ if __name__ == "__main__":
         penalty_const=100,
     )
 
-    mstp_to_run.run_mTSP()
+    mtsp_to_run.run_mTSP()
