@@ -37,6 +37,7 @@
 # %%
 import random
 import numpy as np
+import pandas as pd
 from deap import base, creator, tools, algorithms
 import matplotlib.pyplot as plt
 
@@ -72,161 +73,11 @@ time_windows = [
 # Example: Set specific time windows for certain cities
 time_windows[7] = (0.5, 1.5)
 time_windows[9] = (0.75, 1.75)
-time_windows[12] = (0.75, 1.75)
+time_windows[12] = (0.5, 1.5)
 time_windows[13] = (0.5, 1.5)
 
+
 # %%
-# def plot_routes(city_coords, depots, individual, title="Routes"):
-#     plt.close("all")  # Close all existing figures
-#     plt.figure(figsize=(8, 6))
-#     # Plot all cities
-#     plt.scatter(city_coords[:, 0], city_coords[:, 1], c="gray", label="Cities")
-#     # Highlight depots
-#     for i, depot in enumerate(depots):
-#         plt.scatter(
-#             city_coords[depot, 0], city_coords[depot, 1], c="red", label=f"Depot {i+1}"
-#         )
-#     # Assign distinct colors for each agent
-#     colors = ["blue", "green", "orange", "purple", "cyan", "magenta"]
-#     for i, route in enumerate(individual):
-#         if route:
-#             # Construct the full path starting from the depot
-#             path = [depots[i]] + route
-#             x = [city_coords[city][0] for city in path]
-#             y = [city_coords[city][1] for city in path]
-#             plt.plot(x, y, color=colors[i % len(colors)], label=f"Agent {i+1}")
-#     plt.title(title)
-#     plt.legend()
-#     plt.xlabel("X Coordinate")
-#     plt.ylabel("Y Coordinate")
-#     plt.grid(True)
-#     plt.show()
-
-
-# def plot_routes(
-#     city_coords,
-#     depots,
-#     individual,
-#     title="Routes",
-#     theta=1.0,
-#     work_times=None,
-#     time_windows=None,
-# ):
-#     if work_times is None:
-#         work_times = np.zeros(NUM_CITIES)
-#     if time_windows is None:
-#         time_windows = {}
-
-#     plt.close("all")
-#     plt.figure(figsize=(10, 8))
-#     plt.scatter(city_coords[:, 0], city_coords[:, 1], c="gray", label="Cities")
-
-#     # Highlight depots
-#     for i, depot in enumerate(depots):
-#         plt.scatter(
-#             city_coords[depot, 0], city_coords[depot, 1], c="red", label=f"Depot {i+1}"
-#         )
-
-#     colors = ["blue", "green", "orange", "purple", "cyan", "magenta"]
-#     for i, route in enumerate(individual):
-#         if route:
-#             path = [depots[i]] + route
-#             x = [city_coords[city][0] for city in path]
-#             y = [city_coords[city][1] for city in path]
-#             plt.plot(x, y, color=colors[i % len(colors)], label=f"Agent {i+1}")
-
-#             current_time = 0.0
-#             for j in range(1, len(path)):
-#                 prev_city = path[j - 1]
-#                 curr_city = path[j]
-#                 distance = np.linalg.norm(
-#                     city_coords[curr_city] - city_coords[prev_city]
-#                 )
-#                 travel_time = theta * distance
-#                 arrival_time = current_time + travel_time
-
-#                 # Check for time window
-#                 if curr_city in time_windows:
-#                     earliest, latest = time_windows[curr_city]
-#                     if arrival_time < earliest:
-#                         arrival_time = earliest  # Wait until the time window opens
-#                     elif arrival_time > latest:
-#                         print(
-#                             f"Agent {i+1} arrives at city {curr_city} outside the time window."
-#                         )
-
-#                 end_time = arrival_time + work_times[curr_city]
-#                 current_time = end_time
-
-#                 # Annotate the city with arrival and end times
-#                 plt.annotate(
-#                     f"{arrival_time:.1f}/{end_time:.1f}",
-#                     (city_coords[curr_city][0], city_coords[curr_city][1]),
-#                     textcoords="offset points",
-#                     xytext=(0, 10),
-#                     ha="center",
-#                     fontsize=8,
-#                 )
-
-#     plt.title(title)
-#     plt.legend()
-#     plt.xlabel("X Coordinate")
-#     plt.ylabel("Y Coordinate")
-#     plt.grid(True)
-#     plt.show()
-
-
-# def plot_routes(
-#     city_coords, depots, individual, title="Routes", theta=1.0, work_times=None
-# ):
-#     plt.close("all")  # Close all existing figures
-#     plt.figure(figsize=(8, 6))
-#     ax = plt.gca()
-#     # Plot all cities
-#     plt.scatter(city_coords[:, 0], city_coords[:, 1], c="gray", label="Cities")
-#     # Highlight depots
-#     for i, depot in enumerate(depots):
-#         plt.scatter(
-#             city_coords[depot, 0], city_coords[depot, 1], c="red", label=f"Depot {i+1}"
-#         )
-#     # Assign distinct colors for each agent
-#     colors = ["blue", "green", "orange", "purple", "cyan", "magenta"]
-#     for i, route in enumerate(individual):
-#         if route:
-#             # Construct the full path starting from the depot
-#             path = [depots[i]] + route
-#             x = [city_coords[city][0] for city in path]
-#             y = [city_coords[city][1] for city in path]
-#             plt.plot(x, y, color=colors[i % len(colors)], label=f"Agent {i+1}")
-#             # Annotate each city with arrival and end times
-#             current_time = 0.0
-#             for j in range(1, len(path)):
-#                 prev_city = path[j - 1]
-#                 curr_city = path[j]
-#                 distance = np.linalg.norm(
-#                     city_coords[prev_city] - city_coords[curr_city]
-#                 )
-#                 travel_time = theta * distance
-#                 arrival_time = current_time + travel_time
-#                 work_time = work_times[curr_city] if work_times is not None else 0.0
-#                 end_time = arrival_time + work_time
-#                 current_time = end_time
-#                 # Annotate the current city
-#                 ax.annotate(
-#                     f"{curr_city}\nA:{arrival_time:.2f}\nE:{end_time:.2f}",
-#                     (city_coords[curr_city][0], city_coords[curr_city][1]),
-#                     textcoords="offset points",
-#                     xytext=(0, 10),
-#                     ha="center",
-#                     fontsize=8,
-#                     bbox=dict(boxstyle="round,pad=0.3", fc="yellow", alpha=0.5),
-#                 )
-#     plt.title(title)
-#     plt.legend()
-#     plt.xlabel("X Coordinate")
-#     plt.ylabel("Y Coordinate")
-#     plt.grid(True)
-#     plt.show()
 def plot_routes(
     city_coords,
     depots,
@@ -332,7 +183,6 @@ plt.ioff()  # Turn off interactive mode after the loop
 # Create the fitness and individual classes
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
-
 toolbox = base.Toolbox()
 
 
@@ -344,8 +194,10 @@ def create_individual():
     cities = list(set(range(NUM_CITIES)) - set(DEPOTS))
     random.shuffle(cities)
     # Split cities between agents
+    # here it is determined that routes are balanced
     split = len(cities) // NUM_AGENTS
     individual = []
+    # each agent gets the same share of cities + residual for the last agent
     for i in range(NUM_AGENTS):
         route = (
             cities[i * split : (i + 1) * split]
@@ -360,21 +212,12 @@ toolbox.register("individual", tools.initIterate, creator.Individual, create_ind
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
-# Evaluation function
-# def evaluate(individual):
-#     total_distance = 0
-#     for i, route in enumerate(individual):
-#         if route:
-#             # Start from depot
-#             distance = distance_matrix[DEPOTS[i]][route[0]]
-#             # Traverse the route
-#             for j in range(len(route) - 1):
-#                 distance += distance_matrix[route[j]][route[j + 1]]
-#             total_distance += distance
-#     return (total_distance,)
-
-
 def evaluate(individual):
+    """
+    evaluation function, defines what is being optimized
+    for now distance is being optimized
+    may be also time of travel
+    """
     total_distance = 0
     penalty = 0
     for i, route in enumerate(individual):
@@ -382,10 +225,15 @@ def evaluate(individual):
             current_time = 0
             current_city = DEPOTS[i]
             for next_city in route:
+                # NOTE: I optimize wrt to *distance* for now
+                # time_matrix = distance_matrix * theta for now
+                # should be in a function distance_to_time(distance)
                 travel_time = theta * distance_matrix[current_city][next_city]
                 arrival_time = current_time + travel_time
                 start_window, end_window = time_windows[next_city]
                 if arrival_time > end_window:
+                    # penalty in distance
+                    # should be in a function time_to_distance(time)
                     penalty += (
                         (arrival_time - end_window) / theta
                     ) * 100  # Penalize late arrivals, may be other function
@@ -393,6 +241,8 @@ def evaluate(individual):
                     arrival_time = start_window  # Wait until the time window opens
                 current_time = arrival_time + service_times[next_city]
                 if current_time > end_window:
+                    # penalty in distance
+                    # should be in a function time_to_distance(time)
                     penalty += (
                         (current_time - end_window) / theta
                     ) * 100  # Penalize late finish, may be other function
@@ -434,17 +284,19 @@ def repair(individual, num_cities, depots):
     return individual
 
 
-# Crossover operator: swap routes between two individuals
-
-
 def crossover(ind1, ind2):
+    """
+    Crossover operator: swap routes between two individuals
+    """
     for i in range(len(ind1)):
         ind1[i], ind2[i] = ind2[i], ind1[i]
     return ind1, ind2
 
 
-# Mutation operator: shuffle cities within an agent's route
 def mutate(individual):
+    """
+    Mutation operator: shuffle cities within an agent's route
+    """
     for route in individual:
         if len(route) > 1:
             idx1, idx2 = random.sample(range(len(route)), 2)
@@ -455,6 +307,82 @@ def mutate(individual):
 toolbox.register("mate", crossover)
 toolbox.register("mutate", mutate)
 toolbox.register("select", tools.selTournament, tournsize=3)
+
+
+def compute_agent_schedule(
+    agent_idx, route, depots, distance_matrix, theta, service_times, time_windows
+):
+    """
+    Computes the schedule for a single agent.
+
+    Parameters:
+    - agent_idx: Index of the agent.
+    - route: List of city indices assigned to the agent.
+    - depots: List of depot indices for each agent.
+    - distance_matrix: 2D numpy array with distances between cities.
+    - theta: Scalar value to convert distance to time.
+    - service_times: List of service times for each city.
+    - time_windows: List of tuples (start_time, end_time) for each city.
+
+    Returns:
+    - A pandas DataFrame with the schedule for the agent.
+    """
+    depot = depots[agent_idx]
+    schedule = []
+    current_time = 0.0
+    prev_location = depot
+
+    # Start from depot
+    schedule.append(
+        {
+            "Location": f"Depot {depot}",
+            "Start in Depot": current_time,
+            "Travel Time to City": 0.0,
+            "Arrival Time in City": current_time,
+            "Start Time in City": current_time,
+            "Service Time in City": 0.0,
+            "End Time in City": current_time,
+            "Time Window": None,
+        }
+    )
+
+    for city in route:
+        travel_time = theta * distance_matrix[prev_location][city]
+        arrival_time = current_time + travel_time
+        window_start, window_end = time_windows[city]
+
+        # Check if arrival is before the time window starts
+        if arrival_time < window_start:
+            start_service_time = window_start
+        else:
+            start_service_time = arrival_time
+
+        service_time = service_times[city]
+        end_service_time = start_service_time + service_time
+
+        # Annotate time window if binding
+        time_window_annotation = None
+        if arrival_time < window_start or arrival_time > window_end:
+            time_window_annotation = (window_start, window_end)
+
+        schedule.append(
+            {
+                "Location": f"City {city}",
+                "Start in Depot": None,
+                "Travel Time to City": travel_time,
+                "Arrival Time in City": arrival_time,
+                "Start Time in City": start_service_time,
+                "Service Time in City": service_time,
+                "End Time in City": end_service_time,
+                "Time Window": time_window_annotation,
+            }
+        )
+
+        current_time = end_service_time
+        prev_location = city
+
+    df = pd.DataFrame(schedule)
+    return df
 
 
 # Main function with custom evolutionary loop
@@ -493,6 +421,7 @@ def main():
             repair(ind, NUM_CITIES, DEPOTS)
 
         # Evaluate the individuals with an invalid fitness
+        # CHECK WHAT IT DOES
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         for ind in invalid_ind:
             ind.fitness.values = toolbox.evaluate(ind)
@@ -501,7 +430,7 @@ def main():
         hof.update(offspring)
         if gen % 10 == 0:
             best = hof[0]
-            # plt.ion()  # Turn on interactive mode
+            plt.ion()  # Turn on interactive mode
             plot_routes(
                 city_coords,
                 DEPOTS,
@@ -511,8 +440,8 @@ def main():
                 work_times=service_times,
                 time_windows=time_windows,
             )
-            # plt.pause(1)  # Pause to update the plot
-            # plt.ioff()  # Turn off interactive mode after the loop
+            plt.pause(1)  # Pause to update the plot
+            plt.ioff()  # Turn off interactive mode after the loop
 
         # Replace the current population with the offspring
         pop[:] = offspring
@@ -526,6 +455,21 @@ def main():
     print(f"Best total distance: {evaluate(best)[0]:.2f}")
     for i, route in enumerate(best):
         print(f"Agent {i+1} route: {DEPOTS[i]} -> {' -> '.join(map(str, route))}")
+
+    agent_schedules = []
+    for agent_idx, route in enumerate(best):
+        df = compute_agent_schedule(
+            agent_idx,
+            route,
+            DEPOTS,
+            distance_matrix,
+            theta,
+            service_times,
+            time_windows,
+        )
+        agent_schedules.append(df)
+        print(f"\nSchedule for Agent {agent_idx + 1}:\n")
+        print(df.to_string(index=False))
 
 
 if __name__ == "__main__":
