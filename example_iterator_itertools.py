@@ -36,7 +36,7 @@ print(next(x))
 
 
 # %%
-x = it.repeat("ABC", 1)
+x = it.repeat("ABC", 2)
 print(next(x))
 print(next(x))
 

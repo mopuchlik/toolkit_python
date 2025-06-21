@@ -26,7 +26,7 @@ y = {'id': [4, 5, 6, 7],
 
 y = pd.DataFrame(y)
 
-x.append(y)
+# x.append(y)
 
 # alternatywnie
 z = pd.concat([x, y], axis=0, ignore_index=True)
