@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import xgboost as xgb
+import lightgbm as lgb
 
 from sklearn.metrics import mean_squared_error, r2_score, make_scorer
 from sklearn.model_selection import (
@@ -189,6 +190,15 @@ if grid_check_flag:
         max_depth=3,
         random_state=42,
     )
+
+    #     model = lgb.LGBMRegressor(
+    #     objective="regression",      # squared error (L2) regression
+    #     n_estimators=100,
+    #     learning_rate=0.1,
+    #     max_depth=3,                 # cap tree depth
+    #     num_leaves=8,                # ~ 2**max_depth to match capacity
+    #     random_state=42
+    # )
 
     # Grid Search to Optimize for WMAPE
     param_grid = {
