@@ -15,8 +15,11 @@ from sklearn.model_selection import (
     train_test_split,
 )
 
+from sklearn.inspection import PartialDependenceDisplay as PDD, permutation_importance
+from PyALE import ale
 import shap
 
+# %% load dataset
 
 # ### Get the current working directory (adjust)
 cwd = "/home/michal/silos/Dropbox/programowanie/python_general/projects/time_series_with_groups/"
@@ -243,11 +246,51 @@ print(f"R² Score: {r2_score(y_train, y_pred):.2f}")
 #     verbose=True,
 # )
 
+# ############ VALIDATION ##########################
+
+# %% total impurity decrease contributed by a feature across trees
+fi = model_final.feature_importances_
+imp = sorted(zip(X_train.columns, fi), key=lambda t: t[1], reverse=True)
+for k, v in imp[:20]:
+    print(f"{k:25s} {v:8.4f}")
+
+
 # %% feature importance plot
-
-
 xgb.plot_importance(model_final, importance_type="weight")
 plt.show()
+
+# %% permutation importance
+r = permutation_importance(model_final, X_train, y_train, n_repeats=20, random_state=0)
+order = np.argsort(-r.importances_mean)
+for i in order[:20]:
+    print(
+        f"{X_train.columns[i]:25s} mean={r.importances_mean[i]:.4f} ±{r.importances_std[i]:.4f}"
+    )
+
+# %% PDP (Partial Dependence)
+# Shows the average effect of a feature (or pair) on the prediction.
+
+PDD.from_estimator(model_final, X_train, features=["channel_17"])  # 1D PDP
+PDD.from_estimator(model_final, X_train, features=[("channel_17", "quarter_2")])
+
+# %% ICE (Individual Conditional Expectation)
+# Shows per-instance curves—great to spot heterogeneity hidden by PDP.
+PDD.from_estimator(
+    model_final, X_train, features=["channel_17"], kind="both"
+)  # PDP + ICE overlays
+
+# %% ALE (Accumulated Local Effects)
+# Less biased with correlated features
+feature_name = "channel_15"
+
+res = ale(
+    X=X_train,
+    model=model_final,  # pass the estimator (it has .predict)
+    feature=[
+        feature_name
+    ],  # or the column index: [X_train.columns.get_loc('channel_17')]
+    grid_size=20,
+)
 
 
 # %% plot of predict for train
@@ -482,7 +525,8 @@ X_test = X_test[X_train.columns]
 # Left/Right: Negative/positive impact on the prediction.
 # NOTE: useful mostly for categorical variables, for numerical use bar plot
 
-explainer = shap.Explainer(model_final)
+# explainer = shap.Explainer(model_final)
+explainer = shap.TreeExplainer(model_final)
 shap_values = explainer(X_test)
 # ### Beeswarm
 # mean absolute value of the SHAP values for each feature. (default)
@@ -498,12 +542,20 @@ shap.summary_plot(shap_values, X_test)
 shap.summary_plot(shap_values, X_test, plot_type="bar")
 shap.plots.bar(shap_values.abs.mean(0))
 
+#
 shap.dependence_plot("channel_101", shap_values.values, X_test)
+shap.plots.scatter(shap_values[:, "channel_101"], color=shap_values[:, "key_target"])
+
+# waterfall for observation i
+i = 0
+shap.plots.waterfall(shap_values[i])
+
 
 # decision plot TBC
 base_val = explainer.expected_value
 shap_val = explainer.shap_values(X_test)
-shap.decision_plot(base_val, shap_val)
+shap.decision_plot(base_val, shap_val, feature_names=X_test.columns.to_numpy())
+
 
 # %% partial dependence plot
 # Purpose: Understand how a feature affects predictions, holding others constant.
