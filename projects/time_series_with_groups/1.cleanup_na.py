@@ -7,7 +7,7 @@ import seaborn as sns
 import missingno as msno
 
 # ### Get the current working directory (adjust)
-cwd = "/home/michal/Dropbox/programowanie/python_general/projects/time_series_with_groups/"
+cwd = "/home/michal/silos/Dropbox/programowanie/python_general/projects/time_series_with_groups/"
 os.chdir(cwd)
 # cwd = os.getcwd()
 print("Current working directory: {0}".format(os.getcwd()))
