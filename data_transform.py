@@ -247,7 +247,7 @@ df_rename.rename(
 )
 df_rename.columns
 
-# ### group by
+# %% group by
 
 # series
 df_group1 = df.groupby("ocean_proximity")["housing_median_age"].mean()
@@ -260,6 +260,17 @@ df_group_many = df.groupby("ocean_proximity").agg(
     sum_population=("population", sum),
     sum_isna_total_bedrooms=("total_bedrooms", lambda x: (x.isna().sum())),
 )
+
+# group but a function of more than one column
+# agg is faster than apply but apply is more general
+# one may also create g["total_rooms"] - g["total_bedrooms"] in the first place and then use agg
+df_group_many2 = (
+    df.groupby("ocean_proximity")
+    .apply(lambda g: (g["total_rooms"] - g["total_bedrooms"]).mean())
+    .rename("mean_rooms_no_bedroom")
+    .to_frame()
+)
+
 # by dict
 # silly but just for an example
 # merge columns longitude and latitude and calculate sum
