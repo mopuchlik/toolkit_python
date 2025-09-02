@@ -5,4 +5,15 @@
 /include
 /lib
 *.pyc
+__pycache__
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.log
+*.pot
+*.mo
+*.swp
+*.swo
+
 
